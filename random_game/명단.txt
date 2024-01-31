@@ -1,0 +1,12 @@
+Python
+JavaScript
+C++
+TypeScript
+Node.js
+Java
+C#
+Bash/Shell
+PHP
+Go
+Kotlin
+Ruby
