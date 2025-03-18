@@ -9,3 +9,6 @@
 - image_labeling: [이미지를 확인하면서 각 폴더로 분류하는 프로그램](https://boksup.tistory.com/55)
     - 이미지를 확인하면서 설정해둔 폴더로 이동시키는 프로그램
     - 짤 정리 / 이미지 라벨링 용도로 사용
+- wheel_packager: [AWS Lambda Layer 만들기를 돕는 프로그램](https://boksup.tistory.com/100)
+    - `.whl` 파일들을 압축 해제하여 `python.zip`으로 만들어주는 프로그램
+    - 기존 `python.zip`에 `.whl` 파일 추가 병합 가능
