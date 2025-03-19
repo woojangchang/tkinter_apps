@@ -122,6 +122,32 @@ class WheelPackagerApp:
         self.status_label.config(text=text)
         self.root.update_idletasks()
 
+    def extract_zip_content(self, zip_file, destination):
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            file_list = zip_ref.namelist()
+            
+            # python.zip 파일 처리 - 내부에 python 디렉토리가 있는지 확인
+            if any(name.startswith('python/') for name in file_list):
+                # python 폴더 내용만 추출
+                for file_info in zip_ref.infolist():
+                    if file_info.filename.startswith('python/'):
+                        extracted_path = file_info.filename[len('python/'):]
+                        if extracted_path:  # 빈 경로 방지
+                            source = zip_ref.read(file_info.filename)
+                            target_path = os.path.join(destination, extracted_path)
+                            
+                            # 디렉토리면 생성
+                            if file_info.filename.endswith('/'):
+                                os.makedirs(target_path, exist_ok=True)
+                            else:
+                                # 파일의 디렉토리가 없으면 생성
+                                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                                with open(target_path, 'wb') as f:
+                                    f.write(source)
+            else:
+                # 일반 zip, whl 파일은 그대로 추출
+                zip_ref.extractall(destination)
+
     def process_and_create_zip(self):
         if not self.selected_files:
             return
@@ -139,26 +165,33 @@ class WheelPackagerApp:
                 total_files = len(self.selected_files)
                 for idx, file in enumerate(self.selected_files, start=1):
                     self.update_progress((idx / total_files) * 80, f"Processing {os.path.basename(file)}...")
-
-                    with zipfile.ZipFile(file, 'r') as zip_ref:
-                        zip_ref.extractall(final_python_dir)
+                    
+                    # zip 또는 whl 파일 처리
+                    if file.endswith('.zip'):
+                        self.extract_zip_content(file, final_python_dir)
+                    else:  # whl 파일
+                        with zipfile.ZipFile(file, 'r') as zip_ref:
+                            zip_ref.extractall(final_python_dir)
 
                 self.update_progress(90, "Creating final python.zip file...")
 
                 output_zip_path = os.path.join(os.getcwd(), self.python_zip_name)
                 with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
-                    for root, _, files in os.walk(final_python_dir):
+                    for root, _, files in os.walk(temp_dir):
                         for file in files:
                             file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(file_path, final_python_dir)
-                            zip_ref.write(file_path, os.path.join(self.python_dir, arcname))
+                            arcname = os.path.relpath(file_path, temp_dir)
+                            zip_ref.write(file_path, arcname)
 
                 self.update_progress(100, "Processing complete!")
 
                 # 기존 업로드된 파일 리스트 및 whl 삭제
                 for file in self.selected_files:
                     if file.endswith(".whl"):
-                        os.remove(file)
+                        try:
+                            os.remove(file)
+                        except:
+                            pass
 
                 self.clear_all()
 
